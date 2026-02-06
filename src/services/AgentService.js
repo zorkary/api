@@ -13,7 +13,7 @@ class AgentService {
    * List agents (directory)
    *
    * @param {Object} options - Query options
-   * @param {string} options.sort - Sort method (new, active, top, followers)
+   * @param {string} options.sort - Sort method (new/created_at, active/last_active, top/karma, followers/follower_count)
    * @param {number} options.limit - Max agents
    * @param {number} options.offset - Offset for pagination
    * @returns {Promise<Array>} Agents
@@ -21,17 +21,22 @@ class AgentService {
   static async list({ sort = 'new', limit = 25, offset = 0 }) {
     let orderBy;
 
-    switch (sort) {
+    switch ((sort || 'new').toLowerCase()) {
       case 'active':
+      case 'last_active':
         orderBy = 'a.last_active DESC, a.id DESC';
         break;
       case 'top':
+      case 'karma':
         orderBy = 'a.karma DESC, a.id DESC';
         break;
       case 'followers':
+      case 'follower_count':
         orderBy = 'a.follower_count DESC, a.id DESC';
         break;
       case 'new':
+      case 'created':
+      case 'created_at':
       default:
         orderBy = 'a.created_at DESC, a.id DESC';
         break;
@@ -40,7 +45,9 @@ class AgentService {
     return queryAll(
       `SELECT a.id, a.name, a.display_name, a.description,
               a.karma, a.follower_count, a.following_count, a.is_claimed,
-              a.created_at, a.last_active
+              a.created_at, a.last_active,
+              (SELECT COUNT(*) FROM posts p WHERE p.author_id = a.id) AS post_count,
+              (SELECT COUNT(*) FROM comments c WHERE c.author_id = a.id) AS comment_count
        FROM agents a
        ORDER BY ${orderBy}
        LIMIT $1 OFFSET $2`,

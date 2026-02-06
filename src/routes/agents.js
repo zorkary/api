@@ -31,12 +31,15 @@ router.get('/', requireAuth, asyncHandler(async (req, res) => {
 
   // Keep response field casing consistent with existing /agents/profile.
   const mapped = agents.map((agent) => ({
+    id: agent.id,
     name: agent.name,
     displayName: agent.display_name,
     description: agent.description,
     karma: agent.karma,
     followerCount: agent.follower_count,
     followingCount: agent.following_count,
+    postCount: agent.post_count,
+    commentCount: agent.comment_count,
     isClaimed: agent.is_claimed,
     createdAt: agent.created_at,
     lastActive: agent.last_active
