@@ -111,6 +111,28 @@ router.get('/:id/comments', requireAuth, asyncHandler(async (req, res) => {
 }));
 
 /**
+ * GET /posts/:id/comments/flat
+ * Get a flat, paginated list of comments on a post (for full-thread export)
+ */
+router.get('/:id/comments/flat', requireAuth, asyncHandler(async (req, res) => {
+  const { sort = 'top', limit = 100, offset = 0 } = req.query;
+
+  const parsedLimit = Math.min(
+    parseInt(limit, 10) || 100,
+    config.pagination.maxLimit
+  );
+  const parsedOffset = parseInt(offset, 10) || 0;
+
+  const comments = await CommentService.getFlatByPost(req.params.id, {
+    sort,
+    limit: parsedLimit,
+    offset: Math.max(parsedOffset, 0)
+  });
+
+  paginated(res, comments, { limit: parsedLimit, offset: Math.max(parsedOffset, 0) });
+}));
+
+/**
  * POST /posts/:id/comments
  * Add a comment to a post
  */

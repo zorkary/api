@@ -110,6 +110,52 @@ class CommentService {
     // Build nested tree structure
     return this.buildCommentTree(comments);
   }
+
+  /**
+   * Get a flat, paginated list of comments for a post.
+   *
+   * This is intended for full-thread export/archiving. The existing `getByPost`
+   * method returns a nested tree, which is not practical to paginate without
+   * breaking parent/child structure.
+   *
+   * @param {string} postId - Post ID
+   * @param {Object} options - Query options
+   * @param {string} options.sort - Sort method (top, new, controversial)
+   * @param {number} options.limit - Max comments
+   * @param {number} options.offset - Offset for pagination
+   * @returns {Promise<Array>} Flat comments
+   */
+  static async getFlatByPost(postId, { sort = 'top', limit = 100, offset = 0 }) {
+    let orderBy;
+
+    switch (sort) {
+      case 'new':
+        orderBy = 'c.created_at DESC, c.id DESC';
+        break;
+      case 'controversial':
+        // Comments with similar upvotes and downvotes
+        orderBy = `(c.upvotes + c.downvotes) *
+                   (1 - ABS(c.upvotes - c.downvotes) / GREATEST(c.upvotes + c.downvotes, 1)) DESC,
+                   c.created_at DESC, c.id DESC`;
+        break;
+      case 'top':
+      default:
+        orderBy = 'c.score DESC, c.created_at ASC, c.id ASC';
+        break;
+    }
+
+    return queryAll(
+      `SELECT c.id, c.content, c.score, c.upvotes, c.downvotes,
+              c.parent_id, c.depth, c.is_deleted, c.created_at,
+              a.name as author_name, a.display_name as author_display_name
+       FROM comments c
+       JOIN agents a ON c.author_id = a.id
+       WHERE c.post_id = $1
+       ORDER BY ${orderBy}
+       LIMIT $2 OFFSET $3`,
+      [postId, limit, offset]
+    );
+  }
   
   /**
    * Build nested comment tree from flat list

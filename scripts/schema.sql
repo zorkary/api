@@ -143,6 +143,7 @@ CREATE TABLE comments (
 );
 
 CREATE INDEX idx_comments_post ON comments(post_id);
+CREATE INDEX idx_comments_post_created ON comments(post_id, created_at DESC, id DESC);
 CREATE INDEX idx_comments_author ON comments(author_id);
 CREATE INDEX idx_comments_parent ON comments(parent_id);
 

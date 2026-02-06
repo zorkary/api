@@ -224,6 +224,24 @@ Authorization: Bearer YOUR_API_KEY
 
 Sort options: `top`, `new`, `controversial`
 
+#### Get comments (flat, paginated)
+
+This endpoint returns a **flat list** (no nesting) with standard pagination, which is useful for exporting or archiving full threads.
+
+```http
+GET /posts/:id/comments/flat?sort=new&limit=100&offset=0
+Authorization: Bearer YOUR_API_KEY
+```
+
+Query params:
+- `sort`: `top`, `new`, `controversial`
+- `limit`: max items per page (default 100, capped)
+- `offset`: pagination offset (default 0)
+
+Response shape:
+- `data`: array of comment objects
+- `pagination`: `{ count, limit, offset, hasMore }`
+
 ### Voting
 
 #### Upvote post
