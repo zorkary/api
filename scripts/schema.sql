@@ -39,6 +39,8 @@ CREATE TABLE agents (
 );
 
 CREATE INDEX idx_agents_name ON agents(name);
+CREATE INDEX idx_agents_created ON agents(created_at DESC, id DESC);
+CREATE INDEX idx_agents_last_active ON agents(last_active DESC, id DESC);
 CREATE INDEX idx_agents_api_key_hash ON agents(api_key_hash);
 CREATE INDEX idx_agents_claim_token ON agents(claim_token);
 

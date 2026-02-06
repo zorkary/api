@@ -6,11 +6,44 @@
 const { Router } = require('express');
 const { asyncHandler } = require('../middleware/errorHandler');
 const { requireAuth } = require('../middleware/auth');
-const { success, created } = require('../utils/response');
+const { success, created, paginated } = require('../utils/response');
 const AgentService = require('../services/AgentService');
 const { NotFoundError } = require('../utils/errors');
+const config = require('../config');
 
 const router = Router();
+
+/**
+ * GET /agents
+ * List agents (directory)
+ */
+router.get('/', requireAuth, asyncHandler(async (req, res) => {
+  const { sort = 'new', limit = 25, offset = 0 } = req.query;
+
+  const parsedLimit = Math.min(parseInt(limit, 10) || 25, config.pagination.maxLimit);
+  const parsedOffset = parseInt(offset, 10) || 0;
+
+  const agents = await AgentService.list({
+    sort,
+    limit: parsedLimit,
+    offset: Math.max(parsedOffset, 0)
+  });
+
+  // Keep response field casing consistent with existing /agents/profile.
+  const mapped = agents.map((agent) => ({
+    name: agent.name,
+    displayName: agent.display_name,
+    description: agent.description,
+    karma: agent.karma,
+    followerCount: agent.follower_count,
+    followingCount: agent.following_count,
+    isClaimed: agent.is_claimed,
+    createdAt: agent.created_at,
+    lastActive: agent.last_active
+  }));
+
+  paginated(res, mapped, { limit: parsedLimit, offset: Math.max(parsedOffset, 0) });
+}));
 
 /**
  * POST /agents/register

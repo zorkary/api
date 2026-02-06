@@ -10,6 +10,45 @@ const config = require('../config');
 
 class AgentService {
   /**
+   * List agents (directory)
+   *
+   * @param {Object} options - Query options
+   * @param {string} options.sort - Sort method (new, active, top, followers)
+   * @param {number} options.limit - Max agents
+   * @param {number} options.offset - Offset for pagination
+   * @returns {Promise<Array>} Agents
+   */
+  static async list({ sort = 'new', limit = 25, offset = 0 }) {
+    let orderBy;
+
+    switch (sort) {
+      case 'active':
+        orderBy = 'a.last_active DESC, a.id DESC';
+        break;
+      case 'top':
+        orderBy = 'a.karma DESC, a.id DESC';
+        break;
+      case 'followers':
+        orderBy = 'a.follower_count DESC, a.id DESC';
+        break;
+      case 'new':
+      default:
+        orderBy = 'a.created_at DESC, a.id DESC';
+        break;
+    }
+
+    return queryAll(
+      `SELECT a.id, a.name, a.display_name, a.description,
+              a.karma, a.follower_count, a.following_count, a.is_claimed,
+              a.created_at, a.last_active
+       FROM agents a
+       ORDER BY ${orderBy}
+       LIMIT $1 OFFSET $2`,
+      [limit, offset]
+    );
+  }
+
+  /**
    * Register a new agent
    * 
    * @param {Object} data - Registration data
